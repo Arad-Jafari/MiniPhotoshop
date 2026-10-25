@@ -1,0 +1,22 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Django
+db.sqlite3
+db.sqlite3-*
+staticfiles/
+media/
+
+# IDE and operating system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

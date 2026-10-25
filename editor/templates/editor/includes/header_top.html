@@ -1,0 +1,183 @@
+{% load static %}
+
+<div
+    class="header-top"
+    style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding:12px 20px;
+        border-bottom:1px solid rgba(148,163,184,0.18);
+        background:linear-gradient(
+            180deg,
+            rgba(18,26,43,0.98),
+            rgba(18,26,43,0.88)
+        );
+    "
+>
+
+    <!-- Logo -->
+    <div
+        class="logo"
+        aria-label="OpenCV logo and PhotoEditor app name"
+        role="img"
+        style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+            min-width:0;
+        "
+    >
+
+        <a
+            href="/"
+            style="
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                flex-shrink:0;
+            "
+        >
+
+            <img
+                class="opencv-logo"
+                src="{% static 'images/opencv.svg' %}"
+                alt="PhotoEditor logo"
+                style="
+                    height:44px;
+                    width:auto;
+                    max-width:160px;
+                    object-fit:contain;
+                    display:block;
+                    filter:brightness(0) invert(1);
+                "
+            />
+
+        </a>
+
+        <span
+            class="logo-text"
+            style="
+                background:linear-gradient(
+                    135deg,
+                    #7dd3fc,
+                    #c4b5fd
+                );
+                -webkit-background-clip:text;
+                background-clip:text;
+                color:transparent;
+                font-size:1.05rem;
+                line-height:1;
+                font-weight:800;
+            "
+        >
+            PhotoEditor
+        </span>
+
+    </div>
+
+
+    <!-- Authentication controls -->
+    <div
+        style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+        "
+    >
+
+        {% if user.is_authenticated %}
+
+            <!-- Logged-in username -->
+            <span
+                style="
+                    color:#cbd5e1;
+                    font-size:14px;
+                    white-space:nowrap;
+                "
+            >
+                {{ user.username }}
+            </span>
+
+
+            <!-- Logout -->
+            <form
+                method="post"
+                action="/oidc/logout/"
+                style="
+                    display:inline;
+                    margin:0;
+                "
+            >
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="btn btn-outline"
+                    style="
+                        border:1px solid rgba(148,163,184,0.35);
+                        background:rgba(255,255,255,0.04);
+                        color:#e2e8f0;
+                        padding:8px 14px;
+                        border-radius:8px;
+                        font-size:14px;
+                        font-weight:600;
+                        cursor:pointer;
+                    "
+                >
+                    Logout
+                </button>
+
+            </form>
+
+
+        {% else %}
+
+            <!-- Login -->
+            <a
+                href="{% url 'login' %}"
+                class="btn btn-outline"
+                style="
+                    display:inline-block;
+                    border:1px solid rgba(148,163,184,0.35);
+                    background:rgba(255,255,255,0.04);
+                    color:#e2e8f0;
+                    padding:8px 14px;
+                    border-radius:8px;
+                    font-size:14px;
+                    font-weight:600;
+                    text-decoration:none;
+                "
+            >
+                Login
+            </a>
+
+
+            <!-- Register -->
+            <a
+                href="{% url 'register' %}"
+                class="btn btn-primary"
+                style="
+                    display:inline-block;
+                    background:linear-gradient(
+                        90deg,
+                        #2b8cff,
+                        #5b7cff
+                    );
+                    color:#fff;
+                    padding:8px 14px;
+                    border-radius:8px;
+                    font-size:14px;
+                    font-weight:600;
+                    text-decoration:none;
+                "
+            >
+                Register
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</div>

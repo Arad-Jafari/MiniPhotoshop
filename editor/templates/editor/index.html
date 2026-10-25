@@ -1,0 +1,1400 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photo Editor Pro</title>
+    <style>
+        /* ============================================
+                   ROOT VARIABLES
+                   ============================================ */
+        :root {
+            --bg-primary: #0b1020;
+            --bg-secondary: #111827;
+            --bg-card: #121a2b;
+            --bg-panel: rgba(17, 24, 39, 0.85);
+            --bg-input: rgba(15, 23, 42, 0.9);
+            --text-primary: #edf2ff;
+            --text-secondary: #a8b3cf;
+            --accent: #4f8cff;
+            --accent-strong: #7c63ff;
+            --accent-hover: #67a7ff;
+            --accent-glow: rgba(79, 140, 255, 0.28);
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border-color: rgba(148, 163, 184, 0.2);
+            --shadow: 0 20px 50px rgba(15, 23, 42, 0.45);
+            --radius: 16px;
+            --transition: all 0.25s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body, #root {
+            width: 100%;
+            min-height: 100%;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(79, 140, 255, 0.18), transparent 22%),
+                radial-gradient(circle at bottom right, rgba(124, 99, 255, 0.2), transparent 20%),
+                var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        /* ============================================
+                   APP LAYOUT
+                   ============================================ */
+        #root {
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: rgba(17, 24, 39, 0.78);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .header {
+            height: 86px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            background: linear-gradient(180deg, rgba(18, 26, 43, 0.98), rgba(18, 26, 43, 0.88));
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 28px rgba(9, 14, 24, 0.28);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 200px;
+        }
+
+        .opencv-logo {
+            width: 58px;
+            height: auto;
+            display: block;
+            filter: brightness(0) invert(1);
+            opacity: 1;
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #7dd3fc, #c4b5fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            font-size: 22px;
+        }
+
+        .auth-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .user-chip {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            background: rgba(79, 140, 255, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .editor-shell {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .tool-panel {
+            width: 280px;
+            flex: 0 0 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 18px 14px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.9));
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .right-panel {
+            width: 260px;
+            flex: 0 0 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 18px 14px;
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.9));
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .tool-block {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        #paramControls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .effect-param-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            max-width: 100%;
+        }
+
+        .effect-param-group > * {
+            max-width: 100%;
+        }
+
+        .effect-param-group span:first-child {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .tool-block label,
+        .box-title {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #effectSelect {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        #effectSelect option {
+            padding: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .param-hint {
+            display: none;
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .param-hint.visible {
+            display: block;
+        }
+
+        .param-input {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.7);
+            color: var(--text-primary);
+            width: 65px;
+            font-size: 12px;
+            outline: none;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .effect-param-group select.param-input {
+            width: 120px;
+            min-width: 120px;
+            text-align: left;
+        }
+
+        .param-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            text-decoration: none;
+            transition: var(--transition);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: white;
+        }
+
+        .btn-outline {
+            background: rgba(148, 163, 184, 0.04);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 18px rgba(79, 140, 255, 0.25);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.08);
+            box-shadow: 0 12px 24px rgba(79, 140, 255, 0.35);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #2ccf7a, #1aa66a);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #111827;
+        }
+
+        .action-btn.danger {
+            background: linear-gradient(135deg, #f87171, #ef4444);
+        }
+
+        .action-btn.outline {
+            background: rgba(148, 163, 184, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        #resetBtn {
+            background: linear-gradient(135deg, #f87171, #ef4444) !important;
+            color: #fff !important;
+            border: 1px solid rgba(239, 68, 68, 0.7) !important;
+            box-shadow: 0 8px 18px rgba(239, 68, 68, 0.25);
+        }
+
+        .filter-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 28px;
+            align-items: center;
+        }
+
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: var(--text-primary);
+            border-radius: 999px;
+            padding: 4px 8px 4px 10px;
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
+        .filter-remove {
+            appearance: none;
+            border: none;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fecaca;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .status-box {
+            margin-top: auto;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .dot.idle { background: var(--text-secondary); }
+        .dot.uploading { background: var(--warning); }
+        .dot.processing { background: var(--accent); }
+        .dot.success { background: var(--success); }
+        .dot.error { background: var(--danger); }
+
+        .image-info {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #fecaca;
+            background: rgba(127, 29, 29, 0.9);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: inline-block;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .image-info.success {
+            color: #dcfce7;
+            background: rgba(20, 83, 45, 0.9);
+            border-color: rgba(34, 197, 94, 0.6);
+        }
+
+        .image-info.error {
+            color: #fecaca;
+            background: rgba(127, 29, 29, 0.9);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .image-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .image-area {
+            width: min(100%, 1040px);
+            height: clamp(260px, 62vh, 700px);
+            max-width: 100%;
+            max-height: calc(100vh - 180px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(17, 24, 39, 0.92)), radial-gradient(circle at center, rgba(79, 140, 255, 0.08), transparent 52%);
+            border-radius: var(--radius);
+            border: 1.5px dashed rgba(148, 163, 184, 0.24);
+            overflow: hidden;
+            position: relative;
+            transition: var(--transition);
+            cursor: pointer;
+            box-shadow: inset 0 0 30px rgba(15, 23, 42, 0.7);
+            margin: 0 auto;
+        }
+
+        .image-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            transition: opacity 0.5s ease;
+            object-position: center;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .image-area img.loaded {
+            display: block;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-secondary);
+            pointer-events: none;
+            padding: 40px;
+        }
+
+        .placeholder.hidden {
+            display: none;
+        }
+
+        .placeholder .icon {
+            font-size: 64px;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .placeholder .title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .placeholder .sub {
+            font-size: 13px;
+            opacity: 0.6;
+        }
+
+        .drag-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(108, 99, 255, 0.06);
+            border: 2px solid var(--accent);
+            border-radius: var(--radius);
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--accent);
+            z-index: 5;
+        }
+
+        .drag-overlay.active {
+            display: flex;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @media (max-width: 900px) {
+            .editor-shell {
+                flex-direction: column;
+            }
+
+            .tool-panel,
+            .right-panel {
+                width: 100%;
+                flex-basis: auto;
+                border: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .image-area {
+                width: 100%;
+                height: clamp(220px, 42vh, 480px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                overflow-y: auto;
+            }
+
+            .app {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .header {
+                height: auto;
+                padding: 12px 14px;
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                min-width: 0;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .auth-controls {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .tool-panel,
+            .right-panel {
+                padding: 12px 10px;
+            }
+
+            .button-row {
+                flex-direction: column;
+            }
+
+            .action-btn,
+            .btn {
+                width: 100%;
+            }
+
+            .image-stage {
+                padding: 12px;
+            }
+
+            .placeholder .icon {
+                font-size: 42px;
+            }
+
+            .placeholder .title {
+                font-size: 16px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        </style>
+</head>
+<body>
+
+    <div id="root" class="app">
+        <header class="header">
+            <div class="logo">
+                <img class="opencv-logo" src="{% static 'images/opencv.svg' %}" alt="MiniPhotoShop logo" />
+                <span class="logo-text">MiniPhotoShop</span>
+            </div>
+
+            <div class="auth-controls">
+                {% if username %}
+                    <span class="user-chip">User: {{ username }}</span>
+                    <form method="post" action="/oidc/logout/" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline">Logout</button>
+</form>
+                {% else %}
+                    <a href="/users/login/" class="btn btn-outline">Login</a>
+                    <a href="/users/register/" class="btn btn-primary">Sign up</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <div class="editor-shell">
+            <aside class="tool-panel">
+                <div class="tool-block">
+                    <label for="effectSelect">Effects</label>
+                    <select id="effectSelect" multiple size="7">
+                        <option value="blur">Blur</option>
+                        <option value="gaussian_blur">Gaussian Blur</option>
+                        <option value="median_blur">Median Blur</option>
+                        <option value="sharpen">Sharpen</option>
+                        <option value="flip">Flip</option>
+                        <option value="rotate">Rotate</option>
+                        <option value="resize">Resize</option>
+                        <option value="brightness">Brightness</option>
+                        <option value="contrast">Contrast</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="gaussian_noise">Gaussian Noise</option>
+                    </select>
+                </div>
+
+                <div class="tool-block">
+                    <div class="box-title">Parameters</div>
+                    <div id="paramControls"></div>
+                    <div id="paramHint" class="param-hint">Hold Ctrl to select multiple effects</div>
+                </div>
+
+                <div class="tool-block">
+                    <div class="box-title">Actions</div>
+                    <div class="button-row">
+                        <button class="action-btn" id="applyBtn" type="button" disabled>Apply</button>
+                        <button class="action-btn outline" id="resetBtn" type="button" disabled>Reset</button>
+                    </div>
+                </div>
+
+            </aside>
+
+            <main class="image-stage">
+                <div class="image-area" id="imageArea">
+                    <img id="mainImage" src="" alt="Upload an image" />
+
+                    <div class="placeholder" id="placeholder">
+                        <span class="icon">🖼</span>
+                        <div class="title">Drop your image here</div>
+                        <div class="sub">or click to browse</div>
+                    </div>
+
+                    <div class="drag-overlay" id="dragOverlay">Drop your image here</div>
+
+                    <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,.bmp,image/jpeg,image/png,image/webp,image/bmp" />
+                </div>
+            </main>
+
+            <aside class="right-panel">
+                <div class="tool-block">
+                    <div class="box-title">File</div>
+                    <div class="button-row">
+                        <button class="action-btn secondary" id="saveBtn" type="button" disabled>Save</button>
+                        <button class="action-btn warning" id="newBtn" type="button" disabled>New</button>
+                    </div>
+                    <button class="action-btn outline" id="uploadBtn" type="button" style="width: 100%; margin-top: 10px;">Upload</button>
+                </div>
+
+                <div class="tool-block">
+                    <div class="box-title">Applied Filters</div>
+                    <div id="appliedFilters" class="filter-list">
+                        <span class="filter-pill">None</span>
+                    </div>
+                </div>
+
+                <div class="tool-block status-box">
+                    <div class="status">
+                        <span class="dot idle" id="statusDot"></span>
+                        <span id="statusText">Ready</span>
+                    </div>
+                    <div id="imageInfo" class="image-info">No image loaded</div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Auth overlay (visible when not logged in or when auth error occurs) -->
+    <div id="authOverlay" style="display:none;position:fixed;inset:0;background:linear-gradient(180deg, rgba(2,6,23,0.85), rgba(2,6,23,0.9));z-index:3000;align-items:center;justify-content:center;">
+      <div style="background:rgba(15,23,42,0.92);padding:28px;border-radius:12px;max-width:720px;width:90%;text-align:center;border:1px solid rgba(148,163,184,0.06);box-shadow:0 20px 60px rgba(2,6,23,0.6);">
+        <h2 style="color:var(--text-primary);margin-bottom:8px">Access restricted</h2>
+        <p id="authOverlayMsg" style="color:var(--text-secondary);font-size:16px;margin-bottom:18px">Please log in to access the editor and save changes.</p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <a href="/users/login/" class="btn btn-primary">Log in</a>
+          <a href="/users/register/" class="btn btn-outline">Sign up</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSRF -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    <!-- ==========================================
+    JAVASCRIPT
+    ========================================== -->
+    <script>
+        // ============================================
+        // STATE
+        // ============================================
+        const state = {
+            imageLoaded: false,
+            imagePath: null,
+            filename: null,
+            originalImage: null,
+            isProcessing: false,
+            appliedFilters: []
+        };
+
+        // ============================================
+        // DOM REFS
+        // ============================================
+        const $ = (id) => document.getElementById(id);
+
+        const fileInput = $('fileInput');
+        const mainImage = $('mainImage');
+        const imageArea = $('imageArea');
+        const placeholder = $('placeholder');
+        const dragOverlay = $('dragOverlay');
+        const statusText = $('statusText');
+        const statusDot = $('statusDot');
+        const imageInfo = $('imageInfo');
+        const appliedFilters = $('appliedFilters');
+        const toast = $('toast');
+  
+        // Is user authenticated (server-provided)
+        const IS_AUTH = {{ is_authenticated|yesno:"true,false" }};
+        const USERNAME = "{{ username|escapejs }}";
+
+        const effectSelect = $('effectSelect');
+        const paramControls = $('paramControls');
+        const paramHint = $('paramHint');
+
+        const applyBtn = $('applyBtn');
+        const saveBtn = $('saveBtn');
+        const resetBtn = $('resetBtn');
+        const newBtn = $('newBtn');
+        const uploadBtn = $('uploadBtn');
+
+        // ============================================
+        // EFFECT CONFIG
+        // ============================================
+        const effectConfigs = {
+            blur: { params: [{ key: 'kernel_size_blur', default: 5 }], hint: 'Kernel: 3,5,7,9' },
+            gaussian_blur: { params: [{ key: 'kernel_size_gaussian', default: 5 }], hint: 'Kernel: 3,5,7,9' },
+            median_blur: { params: [{ key: 'kernel_size_median', default: 5 }], hint: 'Kernel: 3,5,7,9' },
+            sharpen: { params: [], hint: 'No parameters needed' },
+            flip: { params: [{ key: 'flip_code', default: 1 }], hint: 'Horizontal, Vertical, Both' },
+            rotate: { params: [{ key: 'angle', default: 90 }], hint: 'Angle: 45, 90, 180, 270' },
+            resize: {
+                params: [{ key: 'width', default: 800 }, { key: 'height', default: 600 }],
+                hint: 'Both width & height required',
+                requiresBoth: true
+            },
+            brightness: { params: [{ key: 'brightness_value', default: 30 }], hint: '-100 to 100' },
+            contrast: { params: [{ key: 'contrast_value', default: 1.5 }], hint: '0.1 to 3.0' },
+            grayscale: { params: [], hint: 'No parameters needed' },
+            gaussian_noise: { params: [{ key: 'sigma', default: 20 }], hint: 'Sigma: 5-80' }
+        };
+
+        // ============================================
+        // PARAMETER UI
+        // ============================================
+        effectSelect.addEventListener('change', function() {
+            const selectedEffects = Array.from(this.selectedOptions).map(option => option.value);
+            const paramControls = $('paramControls');
+            paramControls.innerHTML = '';
+            paramHint.className = 'param-hint';
+
+            if (!selectedEffects.length) { applyBtn.disabled = true; return; }
+            if (selectedEffects.length > 1) {
+                paramHint.textContent = 'Hold Ctrl/Cmd to select multiple effects';
+            }
+
+            // Build controls for each selected effect (unique IDs per index)
+            selectedEffects.forEach((effect, idx) => {
+                const config = effectConfigs[effect];
+                const wrapper = document.createElement('div');
+                wrapper.className = 'effect-param-group';
+                wrapper.style.display = 'flex';
+                wrapper.style.alignItems = 'center';
+                wrapper.style.flexWrap = 'wrap';
+                wrapper.style.gap = '8px';
+                wrapper.style.width = '100%';
+
+                const lbl = document.createElement('span');
+                lbl.textContent = effect.replace(/_/g, ' ');
+                lbl.style.minWidth = '90px';
+                lbl.style.fontSize = '12px';
+                lbl.style.color = 'var(--text-secondary)';
+                wrapper.appendChild(lbl);
+
+                if (config) {
+                    // Create controls per effect, id-suffixed with index
+                    if (effect === 'blur' || effect === 'gaussian_blur' || effect === 'median_blur') {
+                        const sel = document.createElement('select');
+                        sel.id = 'kernelSelect_' + idx;
+                        [3,5,7,9].forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+                        sel.value = config.params[0] && config.params[0].default ? String(config.params[0].default) : '5';
+                        sel.className = 'param-input';
+                        wrapper.appendChild(sel);
+                    } else if (effect === 'flip') {
+                        const sel = document.createElement('select'); sel.id = 'flipSelect_' + idx;
+                        const oH = document.createElement('option'); oH.value = '1'; oH.textContent = 'Horizontal'; sel.appendChild(oH);
+                        const oV = document.createElement('option'); oV.value = '0'; oV.textContent = 'Vertical'; sel.appendChild(oV);
+                        const oB = document.createElement('option'); oB.value = '-1'; oB.textContent = 'Both (H + V)'; sel.appendChild(oB);
+                        sel.className = 'param-input';
+                        sel.value = String(config.params[0] && config.params[0].default !== undefined ? config.params[0].default : '1');
+                        wrapper.appendChild(sel);
+                    } else if (effect === 'brightness') {
+                        const range = document.createElement('input');
+                        range.type = 'range'; range.id = 'brightnessRange_' + idx; range.min='-100'; range.max='100'; range.step='1';
+                        range.value = config.params[0] && config.params[0].default !== undefined ? String(config.params[0].default) : '30';
+                        range.className = 'param-input'; wrapper.appendChild(range);
+                        const val = document.createElement('span'); val.id = 'brightnessVal_' + idx; val.textContent = range.value; val.style.minWidth='36px'; val.style.textAlign='center'; wrapper.appendChild(val);
+                        range.addEventListener('input', () => val.textContent = range.value);
+                    } else if (effect === 'contrast') {
+                        const range = document.createElement('input');
+                        range.type = 'range'; range.id = 'contrastRange_' + idx; range.min='0.1'; range.max='3.0'; range.step='0.1';
+                        range.value = config.params[0] && config.params[0].default !== undefined ? String(config.params[0].default) : '1.5';
+                        range.className = 'param-input'; wrapper.appendChild(range);
+                        const val = document.createElement('span'); val.id = 'contrastVal_' + idx; val.textContent = range.value; val.style.minWidth='36px'; val.style.textAlign='center'; wrapper.appendChild(val);
+                        range.addEventListener('input', () => val.textContent = range.value);
+                    } else if (effect === 'gaussian_noise') {
+                        const range = document.createElement('input');
+                        range.type = 'range'; range.id = 'sigmaRange_' + idx; range.min='5'; range.max='80'; range.step='1';
+                        range.value = config.params[0] && config.params[0].default !== undefined ? String(config.params[0].default) : '20';
+                        range.className = 'param-input'; wrapper.appendChild(range);
+                        const val = document.createElement('span'); val.id = 'sigmaVal_' + idx; val.textContent = range.value; val.style.minWidth='36px'; val.style.textAlign='center'; wrapper.appendChild(val);
+                        range.addEventListener('input', () => val.textContent = range.value);
+                    } else if (effect === 'rotate') {
+                        const inp = document.createElement('input'); inp.type='text'; inp.id='angleInput_' + idx; inp.className='param-input'; inp.placeholder='Angle';
+                        inp.value = config.params[0] && config.params[0].default !== undefined ? String(config.params[0].default) : '90'; wrapper.appendChild(inp);
+                        // Auto-crop option
+                        const autoWrap = document.createElement('label'); autoWrap.style.display = 'inline-flex'; autoWrap.style.alignItems = 'center'; autoWrap.style.gap = '6px';
+                        autoWrap.style.marginLeft = '6px';
+                        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'angleAutocrop_' + idx; cb.className = 'param-input'; cb.checked = true;
+                                                const cbText = document.createElement('span'); cbText.textContent = 'Auto-crop'; cbText.style.fontSize = '12px'; cbText.style.color = 'var(--text-secondary)';
+                        autoWrap.appendChild(cb); autoWrap.appendChild(cbText); wrapper.appendChild(autoWrap);
+                    } else if (effect === 'resize') {
+                        const w = document.createElement('input'); w.type='text'; w.id='widthInput_' + idx; w.className='param-input'; w.placeholder='Width';
+                        w.value = config.params[0] && config.params[0].default !== undefined ? String(config.params[0].default) : '';
+                        const h = document.createElement('input'); h.type='text'; h.id='heightInput_' + idx; h.className='param-input'; h.placeholder='Height';
+                        h.value = config.params[1] && config.params[1].default !== undefined ? String(config.params[1].default) : '';
+                        wrapper.appendChild(w); wrapper.appendChild(h);
+                    } else if (config.params.length > 0) {
+                        config.params.forEach((p, pidx) => {
+                            const inp = document.createElement('input'); inp.type='text'; inp.className='param-input'; inp.id = 'param_' + idx + '_' + pidx;
+                            inp.placeholder = p.key; if (p.default !== undefined) inp.value = String(p.default); wrapper.appendChild(inp);
+                        });
+                    }
+
+                    if (config.hint) {
+                        const h = document.createElement('span'); h.textContent = config.hint; h.style.fontSize='11px'; h.style.color='var(--text-secondary)'; wrapper.appendChild(h);
+                    }
+                }
+
+                paramControls.appendChild(wrapper);
+            });
+
+            paramHint.className = 'param-hint visible';
+            applyBtn.disabled = !state.imageLoaded || selectedEffects.length === 0 || !IS_AUTH;
+        });
+
+        // ============================================
+        // FILE HANDLING
+        // ============================================
+        uploadBtn.addEventListener('click', (e) => { e.stopPropagation();
+            if (!requireAuth('Access restricted. Please log in or sign up to upload and edit images.')) return;
+            fileInput.click(); });
+
+        fileInput.addEventListener('change', function() {
+            if (!requireAuth('Access restricted. Please log in or sign up to upload and edit images.')) return;
+            if (this.files && this.files.length > 0) {
+                uploadFile(this.files[0]);
+                this.value = '';
+            }
+        });
+
+        imageArea.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'IMG') {
+                if (!requireAuth('Access restricted. Please log in or sign up to upload and edit images.')) return;
+                fileInput.click();
+            }
+        });
+
+        imageArea.addEventListener('dragover', (e) => {
+            if (!IS_AUTH) {
+                e.preventDefault();
+                return;
+            }
+            e.preventDefault();
+            imageArea.classList.add('dragover');
+            dragOverlay.classList.add('active');
+        });
+
+        imageArea.addEventListener('dragleave', () => {
+            imageArea.classList.remove('dragover');
+            dragOverlay.classList.remove('active');
+        });
+
+        imageArea.addEventListener('drop', (e) => {
+            if (!requireAuth('Access restricted. Please log in or sign up to upload and edit images.')) return;
+            e.preventDefault();
+            imageArea.classList.remove('dragover');
+            dragOverlay.classList.remove('active');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                uploadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.bmp'];
+        const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
+
+        function isSupportedImageFile(file) {
+            if (!file) return false;
+            const mime = (file.type || '').toLowerCase();
+            const name = (file.name || '').toLowerCase();
+            const hasAllowedMime = ALLOWED_IMAGE_MIME_TYPES.includes(mime);
+            const hasAllowedExt = ALLOWED_IMAGE_EXTENSIONS.some(ext => name.endsWith(ext));
+            return hasAllowedMime || hasAllowedExt;
+        }
+
+        // ============================================
+        // UPLOAD
+        // ============================================
+        function uploadFile(file) {
+            if (!requireAuth('Access restricted. Please log in or sign up to upload and edit images.')) return;
+            if (!isSupportedImageFile(file)) {
+                const message = 'Unsupported file format. Please upload JPG, JPEG, PNG, WEBP, or BMP images.';
+                setStatus('Unsupported format', 'error');
+                showToast(message, 'error');
+                handleError(message);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            setStatus('Uploading...', 'uploading');
+            showToast('Uploading image...', 'info');
+            setButtonsDisabled(true);
+
+            fetch('/api/upload/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData,
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            })
+            .then(async r => { const data = await r.json().catch(() => null); if (!r.ok) { const msg = data && data.message ? data.message : ('Server error: ' + r.status); throw new Error(msg); } return data; })
+            .then(data => {
+                if (data.status === 'success') {
+                    state.filename = data.filename;
+                    state.imagePath = '/media/uploads/' + data.filename;
+
+                    const img = new Image();
+                    img.onload = function() {
+                        displayImage(state.imagePath);
+                        state.originalImage = state.imagePath;
+                        imageInfo.textContent = this.width + ' × ' + this.height + ' px';
+                        imageInfo.className = 'image-info success';
+                        setStatus('Image uploaded', 'success');
+                        showToast('✅ Image uploaded', 'success');
+                        setButtonsDisabled(false);
+                    };
+                    img.onerror = () => { handleError('Failed to load image'); };
+                    img.src = state.imagePath;
+                } else {
+                    handleError(data.message);
+                }
+            })
+            .catch(err => handleError(err.message));
+        }
+
+        // ============================================
+        // DISPLAY
+        // ============================================
+        function displayImage(src) {
+            mainImage.src = src;
+            mainImage.classList.add('loaded');
+            placeholder.classList.add('hidden');
+            state.imageLoaded = true;
+        }
+
+        function setStatus(msg, type) {
+            statusText.textContent = msg;
+            statusDot.className = 'dot ' + (type || 'idle');
+
+            if (msg && msg.toLowerCase().includes('no image')) {
+                imageInfo.className = 'image-info error';
+            } else if (type === 'success') {
+                imageInfo.className = 'image-info success';
+            } else if (type === 'error') {
+                imageInfo.className = 'image-info error';
+            } else {
+                imageInfo.className = 'image-info error';
+            }
+
+            if (msg && msg.toLowerCase().includes('no image')) {
+                imageInfo.textContent = msg;
+            }
+        }
+
+        function setButtonsDisabled(disabled) {
+            [applyBtn, saveBtn, resetBtn, newBtn, uploadBtn].forEach(b => b.disabled = !!disabled);
+        }
+
+        function requireAuth(message) {
+            if (!IS_AUTH) {
+                showAuthOverlay(message || 'Please log in to access the editor. You will not be able to upload or save without signing in.');
+                return false;
+            }
+            hideAuthOverlay();
+            return true;
+        }
+
+        function handleError(msg) {
+            const text = (msg || '').toString();
+            if (text.toLowerCase().includes('auth') || text.toLowerCase().includes('authentication') || text.toLowerCase().includes('login')) {
+                // show big overlay and instruct user to login
+                showAuthOverlay('You must be logged in to use this feature. Please sign in or create an account.');
+                setStatus('Authentication required', 'error');
+                return;
+            }
+
+            setStatus('Error: ' + msg, 'error');
+            showToast('❌ ' + msg, 'error');
+            setButtonsDisabled(true);
+        }
+
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        function renderAppliedFilters(filters) {
+            const items = Array.isArray(filters) ? filters.filter(Boolean) : [];
+            state.appliedFilters = items;
+
+            if (!items.length) {
+                appliedFilters.innerHTML = '<span class="filter-pill">None</span>';
+                return;
+            }
+
+            appliedFilters.innerHTML = items.map((filterName, index) => `
+                <span class="filter-pill">
+                    <span>${filterName}</span>
+                    <button type="button" class="filter-remove" data-index="${index}" aria-label="Remove ${filterName}">×</button>
+                </span>
+            `).join('');
+
+            appliedFilters.querySelectorAll('.filter-remove').forEach(button => {
+                button.addEventListener('click', () => {
+                    const idx = Number(button.dataset.index);
+                    const removed = state.appliedFilters[idx];
+                    if (!removed) return;
+                    removeFilter(idx, removed);
+                });
+            });
+        }
+
+        function removeFilter(index, label) {
+            if (index < 0 || typeof index !== 'number') return;
+            setStatus('Removing filter...', 'processing');
+            showToast(`Reverting: ${label}`, 'info');
+            fetch('/api/remove-filter/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                body: JSON.stringify({ index })
+            })
+            .then(async r => { const data = await r.json().catch(() => null); if (!r.ok) { const msg = data && data.message ? data.message : ('Server error: ' + r.status); throw new Error(msg); } return data; })
+            .then(data => {
+                if (data.status === 'success') {
+                    const imageUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                    const img = new Image();
+                    img.onload = function() {
+                        displayImage(imageUrl);
+                        renderAppliedFilters(data.applied_filters || []);
+                        setStatus('✅ Filter reverted', 'success');
+                        showToast(`Removed filter: ${label}`, 'success');
+                    };
+                    img.onerror = () => { handleError('Failed to revert filter'); };
+                    img.src = imageUrl;
+                } else {
+                    handleError(data.message);
+                }
+            })
+            .catch(err => handleError(err.message));
+        }
+
+        // ============================================
+        // APPLY EFFECT
+        // ============================================
+        applyBtn.addEventListener('click', function() {
+            if (!requireAuth('Access restricted. Please log in or sign up to apply effects.')) return;
+            if (!state.imageLoaded || state.isProcessing) return;
+
+            const selectedEffects = Array.from(effectSelect.selectedOptions).map(option => option.value);
+            if (!selectedEffects.length) { showToast('Select at least one effect', 'warning'); return; }
+
+            const effects = [];
+            for (let i = 0; i < selectedEffects.length; i++) {
+                const effect = selectedEffects[i];
+                const config = effectConfigs[effect];
+                const params = {};
+
+                if (config && config.params.length > 0) {
+                    // Read parameters using index-suffixed control IDs
+                    if (effect === 'blur' || effect === 'gaussian_blur' || effect === 'median_blur') {
+                        const sel = document.getElementById('kernelSelect_' + i);
+                        params[config.params[0].key] = sel ? parseInt(sel.value) : config.params[0].default;
+                    } else if (effect === 'flip') {
+                        const sel = document.getElementById('flipSelect_' + i);
+                        params[config.params[0].key] = sel ? parseInt(sel.value) : config.params[0].default;
+                    } else if (effect === 'brightness') {
+                        const r = document.getElementById('brightnessRange_' + i);
+                        params[config.params[0].key] = r ? parseFloat(r.value) : config.params[0].default;
+                    } else if (effect === 'contrast') {
+                        const r = document.getElementById('contrastRange_' + i);
+                        params[config.params[0].key] = r ? parseFloat(r.value) : config.params[0].default;
+                    } else if (effect === 'gaussian_noise') {
+                        const r = document.getElementById('sigmaRange_' + i);
+                        params[config.params[0].key] = r ? parseFloat(r.value) : config.params[0].default;
+                    } else if (effect === 'rotate') {
+                        const inp = document.getElementById('angleInput_' + i);
+                        const v = inp ? inp.value.trim() : '';
+                        params[config.params[0].key] = v ? parseFloat(v) : config.params[0].default;
+                        const cb = document.getElementById('angleAutocrop_' + i);
+                        if (cb) params['auto_crop'] = !!cb.checked;
+                    } else if (effect === 'resize') {
+                        const w = document.getElementById('widthInput_' + i);
+                        const h = document.getElementById('heightInput_' + i);
+                        params[config.params[0].key] = w && w.value.trim() ? parseInt(w.value) : config.params[0].default;
+                        if (config.params[1]) params[config.params[1].key] = h && h.value.trim() ? parseInt(h.value) : config.params[1].default;
+                        if (config.requiresBoth && (!params.width || !params.height)) { showToast('⚠️ Both width & height required', 'warning'); return; }
+                    } else {
+                        // generic inputs created with param_{i}_{pidx}
+                        config.params.forEach((p, pidx) => {
+                            const el = document.getElementById('param_' + i + '_' + pidx);
+                            if (el) {
+                                const v = el.value.trim();
+                                params[p.key] = v ? parseFloat(v) : p.default;
+                            }
+                        });
+                    }
+                }
+
+                effects.push({ name: effect, params });
+            }
+
+            state.isProcessing = true;
+            applyBtn.disabled = true;
+            setStatus('Processing...', 'processing');
+            showToast('⏳ Applying effects...', 'info');
+
+            console.log('Effects payload:', effects);
+            fetch('/api/apply-filters/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                body: JSON.stringify({ effects })
+            })
+                        .then(async r => { const data = await r.json().catch(() => null); if (!r.ok) { const msg = data && data.message ? data.message : ('Server error: ' + r.status); throw new Error(msg); } return data; })
+            .then(data => {
+                if (data.status === 'success') {
+                    const imageUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                    const img = new Image();
+                    img.onload = function() {
+                        displayImage(imageUrl);
+                        renderAppliedFilters(data.applied_filters || []);
+                        setStatus('✅ Applied', 'success');
+                        showToast('✅ Effects applied', 'success');
+                        state.isProcessing = false;
+                        setButtonsDisabled(false);
+                    };
+                    img.onerror = () => { state.isProcessing = false; setButtonsDisabled(false); handleError('Failed to load result'); };
+                    img.src = imageUrl;
+                } else {
+                    state.isProcessing = false;
+                    setButtonsDisabled(false);
+                    // If authentication is required, show the big overlay with clearer message
+                    if (data.message && data.message.toLowerCase().includes('authentication')) {
+                        showAuthOverlay('You must be logged in to use the editor. Please sign in or create an account.');
+                    } else {
+                        handleError(data.message);
+                    }
+                }
+            })
+            .catch(err => { state.isProcessing = false; setButtonsDisabled(false); handleError(err.message); });
+        });
+
+        // ============================================
+        // SAVE
+        // ============================================
+        saveBtn.addEventListener('click', function() {
+            if (!requireAuth('Access restricted. Please log in or sign up to save your image.')) return;
+            if (!state.imageLoaded) { showToast('No image to save', 'warning'); return; }
+
+            setStatus('Saving...', 'uploading');
+            showToast('💾 Preparing download...', 'info');
+
+            fetch('/api/save-image/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() }
+            })
+                        .then(async r => { const data = await r.json().catch(() => null); if (!r.ok) { const msg = data && data.message ? data.message : ('Server error: ' + r.status); throw new Error(msg); } return data; })
+            .then(data => {
+                if (data.status === 'success') {
+                    const link = document.createElement('a');
+                    link.download = 'edited_' + (state.filename || 'image') + '.jpg';
+                    link.href = data.image_url;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setStatus('✅ Saved', 'success');
+                    showToast('✅ Image downloaded', 'success');
+                } else {
+                    handleError(data.message);
+                }
+            })
+            .catch(err => handleError(err.message));
+        });
+
+        // ============================================
+        // RESET
+        // ============================================
+        resetBtn.addEventListener('click', function() {
+            if (!requireAuth('Access restricted. Please log in or sign up to reset the image.')) return;
+            if (!state.originalImage) { showToast('No original to reset to', 'warning'); return; }
+
+            setStatus('Resetting...', 'processing');
+            showToast('↺ Resetting to original image...', 'info');
+
+            fetch('/api/reset-image/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() }
+            })
+                        .then(async r => { const data = await r.json().catch(() => null); if (!r.ok) { const msg = data && data.message ? data.message : ('Server error: ' + r.status); throw new Error(msg); } return data; })
+            .then(data => {
+                if (data.status === 'success') {
+                    const img = new Image();
+                    img.onload = function() {
+                        displayImage(data.image_url);
+                        renderAppliedFilters([]);
+                        setStatus('↺ Reset', 'success');
+                        showToast('↺ Reset to original', 'info');
+                    };
+                    img.onerror = () => { handleError('Failed to reset image'); };
+                    img.src = data.image_url;
+                } else {
+                    handleError(data.message);
+                }
+            })
+            .catch(err => handleError(err.message));
+        });
+
+        // ============================================
+        // NEW
+        // ============================================
+        newBtn.addEventListener('click', function() {
+            if (!state.imageLoaded) {
+                showToast('There is no image uploaded', 'warning');
+                setStatus('No image uploaded', 'idle');
+                return;
+            }
+            if (!requireAuth('Access restricted. Please log in or sign up to clear the image.')) return;
+            mainImage.classList.remove('loaded');
+            mainImage.src = '';
+            placeholder.classList.remove('hidden');
+            state.imageLoaded = false;
+            state.imagePath = null;
+            state.filename = null;
+            state.originalImage = null;
+            renderAppliedFilters([]);
+            imageInfo.textContent = 'No image loaded';
+            imageInfo.className = 'image-info error';
+            setStatus('Ready', 'idle');
+            showToast('🗑️ Image cleared', 'info');
+            setButtonsDisabled(true);
+            Array.from(effectSelect.options).forEach(option => option.selected = false);
+            const pc = $('paramControls'); if (pc) pc.innerHTML = '';
+            paramHint.className = 'param-hint';
+        });
+
+        // ============================================
+        // TOAST
+        // ============================================
+        let toastTimeout;
+
+        function showToast(msg, type) {
+            toast.textContent = msg;
+            toast.className = 'toast ' + (type || 'info');
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ============================================
+        // AUTH OVERLAY
+        // ============================================
+        const authOverlay = document.getElementById('authOverlay');
+        const authOverlayMsg = document.getElementById('authOverlayMsg');
+        function showAuthOverlay(message) {
+            if (message) authOverlayMsg.textContent = message;
+            authOverlay.style.display = 'flex';
+        }
+        function hideAuthOverlay() { authOverlay.style.display = 'none'; }
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'o') { e.preventDefault();
+                if (!requireAuth('Access restricted. Please log in or sign up to upload and edit images.')) return;
+                fileInput.click(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if (!saveBtn.disabled) { if (!requireAuth('Access restricted. Please log in or sign up to save your image.')) return; saveBtn.click(); } }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); if (!applyBtn.disabled) { if (!requireAuth('Access restricted. Please log in or sign up to apply effects.')) return; applyBtn.click(); } }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') { e.preventDefault(); if (!resetBtn.disabled) { if (!requireAuth('Access restricted. Please log in or sign up to reset the image.')) return; resetBtn.click(); } }
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+        console.log('◈ PhotoEditor loaded');
+        console.log('⌨️ Ctrl+O: Open | Ctrl+S: Save | Ctrl+Enter: Apply | Ctrl+R: Reset');
+        setStatus('Ready', 'idle');
+        setButtonsDisabled(false);
+        hideAuthOverlay();
+    </script>
+
+</body>
+</html>
